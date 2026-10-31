@@ -2,10 +2,14 @@ import os, json, time, random, asyncio, subprocess, datetime
 import requests, edge_tts
 from PIL import Image, ImageDraw, ImageFont
 
-THEME = "মজার বৈজ্ঞানিক তথ্য"  # এখানে আপনার চ্যানেলের বিষয় লিখুন
+THEME = "মজার বৈজ্ঞানিক তথ্য"  # আপনার চ্যানেলের মূল বিষয়
+SUBTOPICS = ["মহাকাশ", "মানবদেহ", "প্রাণীজগৎ", "সমুদ্র", "উদ্ভিদ",
+             "আবহাওয়া", "পদার্থবিজ্ঞান", "রসায়ন", "প্রযুক্তি", "ডাইনোসর",
+             "মস্তিষ্ক", "খাবারের বিজ্ঞান", "পৃথিবীর রহস্য", "আবিষ্কার"]
 VOICE = "bn-BD-NabanitaNeural"
 MODELS = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-flash-lite-latest"]
 PRIVACY = "public"
+USED = "used_titles.txt"
 W, H = 1080, 1920
 WORK = "work"
 
@@ -22,10 +26,20 @@ def sh(cmd):
         raise
 
 
+def used_titles():
+    open(USED, "a").close()
+    with open(USED, encoding="utf-8") as f:
+        return [l.strip() for l in f if l.strip()]
+
+
 def get_script():
     today = datetime.date.today().isoformat()
-    prompt = f"""তুমি একজন ইউটিউব শর্টস স্ক্রিপ্টরাইটার। বিষয়: {THEME}। আজকের তারিখ {today}।
-একটা নতুন ও আকর্ষণীয় আইডিয়া বেছে বাংলায় ৪০ সেকেন্ডের ভিডিও স্ক্রিপ্ট লেখো।
+    sub = random.choice(SUBTOPICS)
+    old = "\n".join(used_titles()[-40:]) or "নেই"
+    prompt = f"""তুমি একজন ইউটিউব শর্টস স্ক্রিপ্টরাইটার। চ্যানেলের বিষয়: {THEME}। আজকের উপবিষয়: {sub}। তারিখ {today}।
+এই উপবিষয়ে একটা একদম নতুন ও আকর্ষণীয় আইডিয়া বেছে বাংলায় ৪০ সেকেন্ডের ভিডিও স্ক্রিপ্ট লেখো।
+নিচের শিরোনামগুলোর মতো বা একই বিষয়ের আইডিয়া দেবে না:
+{old}
 শুধু JSON দাও, এই ফরম্যাটে:
 {{"title":"বাংলা শিরোনাম (৭০ অক্ষরের মধ্যে)","description":"২-৩ লাইনের বাংলা বর্ণনা","tags":["ট্যাগ১","ট্যাগ২"],"scenes":[{{"text":"১-২ ছোট বাক্যের বাংলা বর্ণনা","keyword":"english stock video search words, 1-3 words"}}]}}
 ৬টা দৃশ্য দাও। প্রথম দৃশ্যে কৌতূহল জাগানো হুক, শেষ দৃশ্যে ফলো করার আহ্বান। তথ্য অবশ্যই সঠিক হতে হবে।"""
@@ -186,6 +200,8 @@ def main():
     sh(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", f"{WORK}/list.txt",
         "-c", "copy", "-movflags", "+faststart", final])
     upload(final, data)
+    with open(USED, "a", encoding="utf-8") as f:
+        f.write(data["title"].replace("\n", " ") + "\n")
 
 
 main()
