@@ -39,7 +39,7 @@ def get_script():
             text = text.strip().strip("`").replace("json\n", "", 1)
             return json.loads(text)
         print("Gemini error", r.status_code, r.text[:300])
-        time.sleep(15)
+        time.sleep(60)
     raise SystemExit("Gemini failed")
 
 
