@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 THEME = "মজার বৈজ্ঞানিক তথ্য"  # এখানে আপনার চ্যানেলের বিষয় লিখুন
 VOICE = "bn-BD-NabanitaNeural"
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-3.8-flash"
 PRIVACY = "public"
 W, H = 1080, 1920
 WORK = "work"
