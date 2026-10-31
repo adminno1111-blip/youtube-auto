@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 THEME = "মজার বৈজ্ঞানিক তথ্য"  # এখানে আপনার চ্যানেলের বিষয় লিখুন
 VOICE = "bn-BD-NabanitaNeural"
-MODEL = "gemini-3.8-flash"
+MODELS = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-flash-lite-latest"]
 PRIVACY = "public"
 W, H = 1080, 1920
 WORK = "work"
@@ -29,17 +29,27 @@ def get_script():
 শুধু JSON দাও, এই ফরম্যাটে:
 {{"title":"বাংলা শিরোনাম (৭০ অক্ষরের মধ্যে)","description":"২-৩ লাইনের বাংলা বর্ণনা","tags":["ট্যাগ১","ট্যাগ২"],"scenes":[{{"text":"১-২ ছোট বাক্যের বাংলা বর্ণনা","keyword":"english stock video search words, 1-3 words"}}]}}
 ৬টা দৃশ্য দাও। প্রথম দৃশ্যে কৌতূহল জাগানো হুক, শেষ দৃশ্যে ফলো করার আহ্বান। তথ্য অবশ্যই সঠিক হতে হবে।"""
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={env('GEMINI_API_KEY')}"
     body = {"contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {"responseMimeType": "application/json"}}
-    for _ in range(4):
-        r = requests.post(url, json=body, timeout=120)
-        if r.status_code == 200:
-            text = r.json()["candidates"][0]["content"]["parts"][0]["text"]
-            text = text.strip().strip("`").replace("json\n", "", 1)
-            return json.loads(text)
-        print("Gemini error", r.status_code, r.text[:300])
-        time.sleep(60)
+    for rnd in range(3):
+        for m in MODELS:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={env('GEMINI_API_KEY')}"
+            try:
+                r = requests.post(url, json=body, timeout=120)
+            except Exception as e:
+                print("Request error", m, e)
+                continue
+            if r.status_code == 200:
+                try:
+                    text = r.json()["candidates"][0]["content"]["parts"][0]["text"]
+                    text = text.strip().strip("`").replace("json\n", "", 1)
+                    print("Model used:", m)
+                    return json.loads(text)
+                except Exception as e:
+                    print("Parse error", m, e)
+                    continue
+            print("Gemini error", m, r.status_code, r.text[:200])
+        time.sleep(45)
     raise SystemExit("Gemini failed")
 
 
