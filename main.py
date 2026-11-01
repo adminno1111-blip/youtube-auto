@@ -2,7 +2,7 @@ import os, json, time, random, asyncio, subprocess, datetime
 import requests, edge_tts
 from PIL import Image, ImageDraw, ImageFont
 
-THEME = "মজার বৈজ্ঞানিক তথ্য"  # আপনার চ্যানেলের মূল বিষয়
+THEME = "মজার বৈজ্ঞানিক তথ্য"  # এখানে আপনার চ্যানেলের বিষয় লিখুন
 SUBTOPICS = ["মহাকাশ", "মানবদেহ", "প্রাণীজগৎ", "সমুদ্র", "উদ্ভিদ",
              "আবহাওয়া", "পদার্থবিজ্ঞান", "রসায়ন", "প্রযুক্তি", "ডাইনোসর",
              "মস্তিষ্ক", "খাবারের বিজ্ঞান", "পৃথিবীর রহস্য", "আবিষ্কার"]
@@ -151,7 +151,7 @@ def build_scene(clip, cap, audio, dur, out):
     sh(["ffmpeg", "-y", *src, "-loop", "1", "-i", cap, "-i", audio,
         "-filter_complex", vf, "-map", "[v]", "-map", "2:a", "-af", "apad",
         "-t", str(dur), "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
-        "-pix_fmt", "yuv420p", "-c:a", "aac", "-ar", "44100", "-ac", "2", out])
+        "-pix_fmt", "yuv420p", "-c:a", "aac", "-ar", "48000", "-ac", "2", out])
 
 
 def upload(path, data):
@@ -182,6 +182,44 @@ def upload(path, data):
         raise SystemExit("Upload failed")
 
 
+def upload_facebook(path, data):
+    pid = os.environ.get("FB_PAGE_ID", "").strip()
+    tok = os.environ.get("FB_PAGE_TOKEN", "").strip()
+    if not pid or not tok:
+        print("Facebook: চাবি সেট করা নেই, বাদ দেওয়া হলো")
+        return None
+    g = "https://graph.facebook.com/v26.0"
+    r = requests.post(f"{g}/{pid}/video_reels",
+                      json={"upload_phase": "start", "access_token": tok}, timeout=60)
+    j = r.json()
+    if "video_id" not in j:
+        print("FB start error:", r.status_code, r.text[:500])
+        return False
+    vid = j["video_id"]
+    url = j.get("upload_url") or f"https://rupload.facebook.com/video-upload/v26.0/{vid}"
+    size = os.path.getsize(path)
+    with open(path, "rb") as f:
+        r2 = requests.post(url, headers={"Authorization": "OAuth " + tok,
+                                         "offset": "0", "file_size": str(size),
+                                         "Content-Type": "application/octet-stream"},
+                           data=f, timeout=900)
+    print("FB upload:", r2.status_code, r2.text[:300])
+    if r2.status_code != 200:
+        return False
+    desc = data["title"] + "\n\n" + data["description"] + "\n\n#Reels"
+    for attempt in range(6):
+        time.sleep(10)
+        r3 = requests.post(f"{g}/{pid}/video_reels",
+                           params={"access_token": tok, "video_id": vid,
+                                   "upload_phase": "finish", "video_state": "PUBLISHED",
+                                   "description": desc, "title": data["title"][:90],
+                                   "is_ai_generated": "true"}, timeout=120)
+        print("FB publish:", r3.status_code, r3.text[:300])
+        if r3.status_code == 200 and r3.json().get("success"):
+            return True
+    return False
+
+
 def main():
     os.makedirs(WORK, exist_ok=True)
     data = get_script()
@@ -199,7 +237,21 @@ def main():
     final = f"{WORK}/final.mp4"
     sh(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", f"{WORK}/list.txt",
         "-c", "copy", "-movflags", "+faststart", final])
-    upload(final, data)
+    yt_ok = False
+    try:
+        upload(final, data)
+        yt_ok = True
+    except (Exception, SystemExit) as e:
+        print("YouTube আপলোড ব্যর্থ:", e)
+    fb_ok = None
+    try:
+        fb_ok = upload_facebook(final, data)
+    except Exception as e:
+        print("Facebook আপলোড ব্যর্থ:", e)
+        fb_ok = False
+    print("ফলাফল -> YouTube:", yt_ok, "| Facebook:", fb_ok)
+    if not yt_ok and not fb_ok:
+        raise SystemExit("কোথাও আপলোড হয়নি")
     with open(USED, "a", encoding="utf-8") as f:
         f.write(data["title"].replace("\n", " ") + "\n")
 
