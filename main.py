@@ -2,7 +2,7 @@ import os, json, time, random, asyncio, subprocess, datetime
 import requests, edge_tts
 from PIL import Image, ImageDraw, ImageFont
 
-THEME = "মজার বৈজ্ঞানিক তথ্য"  # এখানে আপনার চ্যানেলের বিষয় লিখুন
+THEME = "মজার বৈজ্ঞানিক তথ্য"  # মহাবিশ্বের রহস্য ০.১
 SUBTOPICS = ["মহাকাশ", "মানবদেহ", "প্রাণীজগৎ", "সমুদ্র", "উদ্ভিদ",
              "আবহাওয়া", "পদার্থবিজ্ঞান", "রসায়ন", "প্রযুক্তি", "ডাইনোসর",
              "মস্তিষ্ক", "খাবারের বিজ্ঞান", "পৃথিবীর রহস্য", "আবিষ্কার"]
