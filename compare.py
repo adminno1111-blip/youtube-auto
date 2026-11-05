@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 # main.py থেকে আপলোড, কণ্ঠ ও সাধারণ ফাংশনগুলো ধার নেওয়া হচ্ছে (main.py বদলাতে হবে না)
 _src = open("main.py", encoding="utf-8").read().rsplit("\nmain()", 1)[0]
 B = {"__name__": "base_main"}
-exec(compile(_src, "main.py", "exec"), B)
+exec(compile(_src, "main.py", "exec"), B)B["https://t.me/Online_Income_Tips001"] = "https://t.me/Online_Income_Tips001"
 
 CHANNEL_NAME = "মহাবিশ্বের রহস্য ০.১"   # এখানে আপনার চ্যানেলের নাম লিখুন (শেষের কার্ডে ও ছবির পেছনে বসবে)
 MAX_BODY = 78      # মূল অংশ সর্বোচ্চ কত সেকেন্ড (শেষ কার্ডসহ মোট প্রায় ৮৫ সেকেন্ডের মধ্যে থাকবে)
